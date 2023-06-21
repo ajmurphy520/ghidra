@@ -102,6 +102,17 @@ task yaccSleigh {
 	}
 }
 
+task redeploy {
+    dependsOn Decompiler:clean
+
+    doLast {
+        copy {
+            from './build/os/'
+            into project.getProperty("GHIDRA_INSTALL_DIR") + 'Ghidra/Features/Decompiler/os'
+        }
+    }
+}
+
 def buildDir = "../../../build" // Relative to the 'workingDir' Exec task property.
 
 def installPoint = "$rootDir/GhidraDocs/languages/html"
