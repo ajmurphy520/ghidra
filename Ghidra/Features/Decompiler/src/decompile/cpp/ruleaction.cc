@@ -181,6 +181,8 @@ void RuleSelectCse::getOpList(vector<uint4> &oplist) const
 
 {
   oplist.push_back(CPUI_SUBPIECE);
+  oplist.push_back(CPUI_INT_MULT);
+  oplist.push_back(CPUI_INT_ADD);
   oplist.push_back(CPUI_INT_SRIGHT); // For division optimization corrections
 }
 

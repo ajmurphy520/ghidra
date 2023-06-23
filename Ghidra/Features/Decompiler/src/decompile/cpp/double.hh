@@ -40,6 +40,7 @@ class SplitVarnode {
   bool findWholeSplitToPieces(void);	///< Find whole out of which \b hi and \b lo are split
   bool findDefinitionPoint(void);	///< Find the earliest PcodeOp where both \b lo and \b hi are defined
   bool findWholeBuiltFromPieces(void);	///< Find whole Varnode formed as a CPUI_PIECE of \b hi and \b lo
+  static void collectAdditiveTerms(Varnode *vn, vector<Varnode *> &terms);
 public:
   SplitVarnode(void) {}			///< Construct an uninitialized SplitVarnode
   SplitVarnode(int4 sz,uintb v);	///< Construct a double precision constant

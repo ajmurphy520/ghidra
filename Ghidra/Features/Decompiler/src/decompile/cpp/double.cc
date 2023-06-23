@@ -712,23 +712,47 @@ bool SplitVarnode::adjacentOffsets(Varnode *vn1,Varnode *vn2,uintb size1)
     return ((vn1->getOffset() + size1) == vn2->getOffset());
   }
 
-  if (!vn2->isWritten()) return false;
-  PcodeOp *op2 = vn2->getDef();
-  if (op2->code() != CPUI_INT_ADD) return false;
-  if (!op2->getIn(1)->isConstant()) return false;
-  uintb c2 = op2->getIn(1)->getOffset();
+  vector<Varnode *> firstTerms;
+  collectAdditiveTerms(vn1, firstTerms);
+  vector<Varnode *> secondTerms;
+  collectAdditiveTerms(vn2, secondTerms);
 
-  if (op2->getIn(0) == vn1)
-    return (size1 == c2);
+  Varnode *curTerm;
+  for (auto iter = firstTerms.begin(); iter != firstTerms.end(); ) {
+      curTerm = *iter;
+      if (curTerm->isConstant()) {
+          ++iter;
+          continue;
+      }
+      bool found = false;
+      for (auto iter2 = secondTerms.begin(); !found && iter2 != secondTerms.end(); ++iter2) {
+          if (curTerm == *iter2) {
+              iter = firstTerms.erase(iter);
+              secondTerms.erase(iter2);
+              found = true;
+          }
+      }
+      if (!found) return false;
+  }
 
-  if (!vn1->isWritten()) return false;
-  PcodeOp *op1 = vn1->getDef();
-  if (op1->code() != CPUI_INT_ADD) return false;
-  if (!op1->getIn(1)->isConstant()) return false;
-  uintb c1 = op1->getIn(1)->getOffset();
+  if (firstTerms.empty() && secondTerms.size() == 1)
+      return size1 == secondTerms[0]->getOffset();
+  if (firstTerms.size() == 1 && secondTerms.size() == 1)
+      return (firstTerms[0]->getOffset() + size1) == secondTerms[0]->getOffset();
 
-  if (op1->getIn(0) != op2->getIn(0)) return false;
-  return ((c1 + size1) == c2);
+  return false;
+}
+
+void SplitVarnode::collectAdditiveTerms(Varnode *vn, vector<Varnode *>& terms)
+{
+    if (!vn->isWritten()||vn->getDef()->code() != CPUI_INT_ADD) {
+        terms.push_back(vn);
+        return;
+    } else {
+        for (int i=0; i<vn->getDef()->numInput();++i) {
+            collectAdditiveTerms(vn->getDef()->getIn(i), terms);
+        }
+    }
 }
 
 /// \brief Verify that the pointers into the given LOAD/STORE PcodeOps address contiguous memory
