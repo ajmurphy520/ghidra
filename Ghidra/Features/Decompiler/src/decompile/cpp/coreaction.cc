@@ -5417,7 +5417,7 @@ void ActionDatabase::universalAction(Architecture *conf)
 	actprop->addRule( new RuleDumptyHump("analysis") );
 	actprop->addRule( new RuleHumptyOr("analysis") );
 	actprop->addRule( new RuleNegateIdentity("analysis") );
-//	actprop->addRule( new RuleSubNormal("analysis") );
+	actprop->addRule( new RuleSubNormal("analysis") );
 	actprop->addRule( new RulePositiveDiv("analysis") );
 	actprop->addRule( new RuleDivTermAdd("analysis") );
 	actprop->addRule( new RuleDivTermAdd2("analysis") );
