@@ -7244,7 +7244,7 @@ int4 RuleSubNormal::applyOp(PcodeOp *op,Funcdata &data)
 
   // Total shift + outsize must be greater equal to size of input
   if ((n+8*c+8*outsize < 8*insize)&&(n != k*8)) return 0;
-  if ((op->getOut()->isPrecisLo() || op->getOut()->isPrecisHi()) && (insize - c - outsize)*8 != n) return 0;
+  if ((op->getOut()->isPrecisLo() || op->getOut()->isPrecisHi() || a->getAddr().isJoin()) && (insize - c - outsize)*8 != n) return 0;
   
   // If totalcut + remain > original input
   if (k+c+outsize > insize) {
