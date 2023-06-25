@@ -3191,6 +3191,9 @@ int4 RuleDoubleIn::attemptMarking(Funcdata &data,Varnode *vn,PcodeOp *subpieceOp
 //      case CPUI_INT_OR:
 //      case CPUI_INT_XOR:
 //      case CPUI_INT_NEGATE:
+      case CPUI_INT_RIGHT:
+      case CPUI_INT_SRIGHT:
+      case CPUI_INT_LEFT:
       case CPUI_INT_MULT:
       case CPUI_INT_DIV:
       case CPUI_INT_SDIV:
