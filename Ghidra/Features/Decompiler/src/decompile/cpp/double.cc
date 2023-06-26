@@ -3213,6 +3213,8 @@ int4 RuleDoubleIn::attemptMarking(Funcdata &data,Varnode *vn,PcodeOp *subpieceOp
       case CPUI_FLOAT_CEIL:
       case CPUI_FLOAT_FLOOR:
       case CPUI_FLOAT_ROUND:
+      case CPUI_PIECE:
+      case CPUI_LOAD:
 	break;
       default:
 	return 0;
@@ -3353,6 +3355,15 @@ int4 RuleDoubleLoad::applyOp(PcodeOp *op,Funcdata &data)
   Varnode *piece1 = op->getIn(1);
   if (!piece0->isWritten()) return 0;
   if (!piece1->isWritten()) return 0;
+  while (piece0->getDef()->code() == CPUI_INDIRECT && piece1->getDef()->code() ==CPUI_INDIRECT) {
+    if (piece0->getDef()->getIn(1)->getAddr() != piece1->getDef()->getIn(1)->getAddr()) return 0;
+    if (piece0->loneDescend() == (PcodeOp *)0) return 0;
+    if (piece1->loneDescend() == (PcodeOp *)0) return 0;
+    piece0 = piece0->getDef()->getIn(0);
+    piece1 = piece1->getDef()->getIn(0);
+    if (!piece0->isWritten()) return 0;
+    if (!piece1->isWritten()) return 0;
+  }
   if (piece0->getDef()->code() != CPUI_LOAD) return false;
   if (piece1->getDef()->code() != CPUI_LOAD) return false;
   if (!SplitVarnode::testContiguousPointers(piece0->getDef(),piece1->getDef(),loadlo,loadhi,spc))
@@ -3376,10 +3387,30 @@ int4 RuleDoubleLoad::applyOp(PcodeOp *op,Funcdata &data)
   // it has been defined. So insert it after the latest.
   data.opInsertAfter(newload,latest);
 
-  // Change the concatenation to a copy from the big load
-  data.opRemoveInput(op,1);
-  data.opSetOpcode(op,CPUI_COPY);
-  data.opSetInput(op,vnout,0);
+  if (op->getIn(0)->getDef()->code() == CPUI_LOAD) {
+    // Change the concatenation to a copy from the big load
+    data.opRemoveInput(op, 1);
+    data.opSetOpcode(op, CPUI_COPY);
+    data.opSetInput(op, vnout, 0);
+  } else {
+    PcodeOp *p0op = piece0->loneDescend();
+    PcodeOp *sub0 = data.newOp(2, newload->getAddr());
+    data.opSetOpcode(sub0, CPUI_SUBPIECE);
+    Varnode *sub0out = data.newUniqueOut(piece0->getSize(), sub0);
+    data.opSetInput(sub0, vnout, 0);
+    data.opSetInput(sub0, data.newConstant(4, piece1->getSize()), 1);
+    data.opSetInput(p0op, sub0out, 0);
+    data.opInsertBefore(sub0, p0op);
+
+    PcodeOp *p1op = piece1->loneDescend();
+    PcodeOp *sub1 = data.newOp(2, newload->getAddr());
+    data.opSetOpcode(sub1, CPUI_SUBPIECE);
+    Varnode *sub1out = data.newUniqueOut(piece1->getSize(), sub1);
+    data.opSetInput(sub1, vnout, 0);
+    data.opSetInput(sub1, data.newConstant(4, 0), 1);
+    data.opSetInput(p1op, sub1out, 0);
+    data.opInsertBefore(sub1, p1op);
+  }
 
   return 1;
 }
