@@ -15,7 +15,7 @@
  */
 package ghidra.program.model.data;
 
-import java.math.BigInteger;
+import java.math.*;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 
@@ -52,9 +52,10 @@ public abstract class AbstractIntegerDataType extends BuiltIn implements ArraySt
 	protected static final EndianSettingsDefinition ENDIAN = EndianSettingsDefinition.DEF;
 	protected static final DataTypeMnemonicSettingsDefinition MNEMONIC =
 		DataTypeMnemonicSettingsDefinition.DEF;
+	protected static final FixedPointPrecisionSettingsDefinition FIXED = FixedPointPrecisionSettingsDefinition.DEF;
 
 	private static SettingsDefinition[] SETTINGS_DEFS =
-		{ FormatSettingsDefinition.DEF_HEX, PADDING, ENDIAN, MNEMONIC };
+		{ FormatSettingsDefinition.DEF_HEX, PADDING, ENDIAN, MNEMONIC, FIXED };
 
 	/**
 	 * Constructor
@@ -303,6 +304,7 @@ public abstract class AbstractIntegerDataType extends BuiltIn implements ArraySt
 	/*package*/ String getRepresentation(BigInteger bigInt, Settings settings, int bitLength) {
 
 		int format = getFormatSettingsDefinition().getFormat(settings);
+		long fixedPoint = FIXED.getValue(settings);
 		boolean padded = PADDING.isPadded(settings);
 
 		boolean negative = bigInt.signum() < 0;
@@ -322,6 +324,10 @@ public abstract class AbstractIntegerDataType extends BuiltIn implements ArraySt
 				nominalLen = (bitLength + 3) / 4;
 				break;
 			case FormatSettingsDefinition.DECIMAL:
+				if (fixedPoint > 1L) {
+					BigDecimal value = new BigDecimal(bigInt);
+					return value.divide(new BigDecimal(fixedPoint), 10, RoundingMode.DOWN).toString();
+				}
 				return bigInt.toString(10);
 			case FormatSettingsDefinition.BINARY:
 				valStr = bigInt.toString(2) + "b";
@@ -344,6 +350,7 @@ public abstract class AbstractIntegerDataType extends BuiltIn implements ArraySt
 	public byte[] encodeRepresentation(String repr, MemBuffer buf, Settings settings, int length)
 			throws DataTypeEncodeException {
 		int format = getFormatSettingsDefinition().getFormat(settings);
+		long fixedPoint = FIXED.getValue(settings);
 		BigInteger value;
 		int radix;
 		String suffix;
@@ -382,7 +389,13 @@ public abstract class AbstractIntegerDataType extends BuiltIn implements ArraySt
 			throw new DataTypeEncodeException("value must have " + suffix + " suffix", repr, this);
 		}
 		try {
-			value = new BigInteger(repr.substring(0, repr.length() - suffix.length()), radix);
+			if (format == FormatSettingsDefinition.DECIMAL && fixedPoint > 1L) {
+				BigDecimal decimal = new BigDecimal(repr, MathContext.UNLIMITED);
+				decimal = decimal.multiply(new BigDecimal(fixedPoint));
+				value = decimal.toBigInteger();
+			} else {
+				value = new BigInteger(repr.substring(0, repr.length() - suffix.length()), radix);
+			}
 		}
 		catch (Exception e) {
 			throw new DataTypeEncodeException(repr, this, e);

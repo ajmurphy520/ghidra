@@ -166,6 +166,11 @@ class StructureDB extends CompositeDB implements StructureInternal {
 		if (isNotYetDefined()) {
 			return "<Empty-Structure>";
 		}
+		if (numComponents == 1) {
+			DataTypeComponentDB displayComponent = getComponent(0);
+			Settings componentSettings = displayComponent.getDefaultSettings();
+			return displayComponent.getDataType().getRepresentation(buf, componentSettings, length);
+		}
 		return "";
 	}
 
