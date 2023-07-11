@@ -37,13 +37,13 @@ public enum ProgramURLUtils {
 		DomainFolder parent = file.getParent();
 		ProjectData projectData = parent == null ? null : parent.getProjectData();
 		RepositoryAdapter repository = projectData == null ? null : projectData.getRepository();
-		if (repository != null) { // There is an associated remote repo
-			if (file.isVersioned()) { // The domain file exists there
-				ServerInfo server = repository.getServerInfo();
-				return GhidraURL.makeURL(server.getServerName(), server.getPortNumber(),
-					repository.getName(), file.getPathname());
-			}
-		}
+//		if (repository != null) { // There is an associated remote repo
+//			if (file.isVersioned()) { // The domain file exists there
+//				ServerInfo server = repository.getServerInfo();
+//				return GhidraURL.makeURL(server.getServerName(), server.getPortNumber(),
+//					repository.getName(), file.getPathname());
+//			}
+//		}
 		return hackAddLocalDomainFilePath(projectLocator.getURL(), file.getPathname());
 	}
 
