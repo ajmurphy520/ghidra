@@ -103,7 +103,7 @@ task yaccSleigh {
 }
 
 task redeploy {
-    dependsOn Decompiler:clean
+    dependsOn Decompiler:cleanNatives
 
     doLast {
         copy {
